@@ -228,14 +228,13 @@
 
 <script>
         // ----------------------------------------
-        // 1. 初始化設定 (已修正變數名稱衝突)
+        // 1. 初始化設定
         // ----------------------------------------
         
-        // 這是妳剛剛提供的真實金鑰 (我已幫妳填入)
         const SUPABASE_URL = 'https://lixcurjoarfyjdmvdepr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpeGN1cmpvYXJmeWpkbXZkZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMTU5MDgsImV4cCI6MjA4MDc5MTkwOH0.M_2aLW055JSkwoE3LlsyRv6jy1IfYXq-nZ4H1oDKkNA';
         
-        // ★ 關鍵修正：使用 'window.supabase' 避免衝突，並將連線變數命名為 'sb'
+        // 使用 window.supabase 避免變數衝突
         const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- 2. Global State ---
@@ -270,7 +269,7 @@
         let creatingItemContext = ''; 
         let selectedEmoji = '🌐';
 
-        // --- 3. Auth Logic (已將 supabase 改為 sb) ---
+        // --- 3. Auth Logic ---
         async function initApp() {
             // Check session
             const { data } = await sb.auth.getSession();
@@ -302,7 +301,6 @@
         async function signIn() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            // ★ 修正：使用 sb
             const { error } = await sb.auth.signInWithPassword({ email, password });
             if (error) {
                 document.getElementById('auth-msg').innerText = error.message;
@@ -312,13 +310,10 @@
         async function signUp() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            // ★ 修正：使用 sb
             const { error } = await sb.auth.signUp({ email, password });
             if (error) {
                 document.getElementById('auth-msg').innerText = error.message;
             } else {
-                // 如果後台已經關閉 Email 驗證，這裡會自動登入
-                // 如果沒關閉，則會顯示提示
                 document.getElementById('auth-msg').style.color = 'green';
                 document.getElementById('auth-msg').innerText = '註冊請求已發送，若未自動登入請檢查信箱。';
             }
@@ -331,7 +326,6 @@
         // --- 4. Database Logic (Tasks) ---
         async function loadTasks() {
             showLoading(true);
-            // ★ 修正：使用 sb
             const { data, error } = await sb.from('tasks').select('*').order('timestamp', { ascending: false });
             if (!error && data) {
                 tasks = data;
@@ -359,7 +353,6 @@
                 const fileName = `${Date.now()}.${fileExt}`;
                 const filePath = `${session.user.id}/${fileName}`;
                 
-                // ★ 修正：使用 sb
                 const { error: uploadError } = await sb.storage.from('jewel-images').upload(filePath, file);
                 
                 if (!uploadError) {
@@ -394,7 +387,6 @@
         }
 
         async function updateStatus(id, newStatus) {
-            // ★ 修正：使用 sb
             const { error } = await sb.from('tasks').update({ status: newStatus }).eq('id', id);
             if (!error) {
                 const t = tasks.find(x => x.id === id);
@@ -405,7 +397,6 @@
 
         // --- 5. Database Logic (Settings) ---
         async function loadSettings() {
-            // ★ 修正：使用 sb
             const { data, error } = await sb.from('user_settings').select('*').single();
             if (data && !error) {
                 if (data.config) {
@@ -416,7 +407,6 @@
                     templates = data.templates;
                 }
             } else if (!data) {
-                // Initialize settings if empty
                 templates = {
                     making: "親愛的，您的飾品正在製作中囉，請耐心等候 ❤️",
                     waiting_pay: "匯款帳號：(822) 1234-5678，金額 $___，匯款後請通知我喔！",
@@ -431,7 +421,6 @@
 
         async function saveSettingsDB() {
             const config = { platforms, types };
-            // ★ 修正：使用 sb
             const { error } = await sb.from('user_settings').upsert({
                 user_id: session.user.id,
                 config,
@@ -439,11 +428,12 @@
             });
         }
 
-        // --- 6. Rendering & UI Logic (Same as v6.1 but adapted) ---
+        // --- 6. Rendering & UI Logic (Fixed Variable Name) ---
         
         function renderTasks() {
             const container = document.getElementById('cardContainer');
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            // ★★★ 修正點：這裡原本寫 searchText，現在統一改為 searchVal ★★★
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const showCompleted = document.getElementById('showCompleted').checked;
             const sortOrder = document.getElementById('sortOrder').value;
             const timeFilter = document.getElementById('timeFilter').value;
@@ -452,7 +442,10 @@
 
             let filtered = tasks.filter(t => {
                 if (currentFilter !== 'all' && t.type !== currentFilter) return false;
+                
+                // ★★★ 修正點：變數名稱現在匹配了 ★★★
                 if (!t.ig.toLowerCase().includes(searchVal) && !t.note.toLowerCase().includes(searchVal)) return false;
+                
                 if (!showCompleted && (t.status === 'done' || t.status === 'cancel')) return false;
                 
                 if (timeFilter !== 'all') {
@@ -654,3 +647,4 @@
 </body>
 
 </html>
+
