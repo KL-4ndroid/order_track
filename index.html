@@ -226,12 +226,17 @@
         </div>
     </div>
 
-    <script>
-        // --- 1. Supabase Initialization ---
-        // 請將下方填入妳提供的 URL 和 Key
+<script>
+        // ----------------------------------------
+        // 1. 初始化設定 (已修正變數名稱衝突)
+        // ----------------------------------------
+        
+        // 這是妳剛剛提供的真實金鑰 (我已幫妳填入)
         const SUPABASE_URL = 'https://lixcurjoarfyjdmvdepr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpeGN1cmpvYXJmeWpkbXZkZXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMTU5MDgsImV4cCI6MjA4MDc5MTkwOH0.M_2aLW055JSkwoE3LlsyRv6jy1IfYXq-nZ4H1oDKkNA';
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // ★ 關鍵修正：使用 'window.supabase' 避免衝突，並將連線變數命名為 'sb'
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- 2. Global State ---
         let session = null;
@@ -265,10 +270,10 @@
         let creatingItemContext = ''; 
         let selectedEmoji = '🌐';
 
-        // --- 3. Auth Logic ---
+        // --- 3. Auth Logic (已將 supabase 改為 sb) ---
         async function initApp() {
             // Check session
-            const { data } = await supabase.auth.getSession();
+            const { data } = await sb.auth.getSession();
             session = data.session;
             
             if (session) {
@@ -280,7 +285,7 @@
             }
 
             // Listen for auth changes
-            supabase.auth.onAuthStateChange((_event, _session) => {
+            sb.auth.onAuthStateChange((_event, _session) => {
                 session = _session;
                 if (session) {
                     document.getElementById('auth-overlay').style.display = 'none';
@@ -297,29 +302,37 @@
         async function signIn() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) document.getElementById('auth-msg').innerText = error.message;
+            // ★ 修正：使用 sb
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) {
+                document.getElementById('auth-msg').innerText = error.message;
+            }
         }
 
         async function signUp() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { error } = await supabase.auth.signUp({ email, password });
+            // ★ 修正：使用 sb
+            const { error } = await sb.auth.signUp({ email, password });
             if (error) {
                 document.getElementById('auth-msg').innerText = error.message;
             } else {
-                alert('註冊信已發送，請檢查信箱 (含垃圾郵件匣) 進行確認！');
+                // 如果後台已經關閉 Email 驗證，這裡會自動登入
+                // 如果沒關閉，則會顯示提示
+                document.getElementById('auth-msg').style.color = 'green';
+                document.getElementById('auth-msg').innerText = '註冊請求已發送，若未自動登入請檢查信箱。';
             }
         }
 
         async function signOut() {
-            await supabase.auth.signOut();
+            await sb.auth.signOut();
         }
 
         // --- 4. Database Logic (Tasks) ---
         async function loadTasks() {
             showLoading(true);
-            const { data, error } = await supabase.from('tasks').select('*').order('timestamp', { ascending: false });
+            // ★ 修正：使用 sb
+            const { data, error } = await sb.from('tasks').select('*').order('timestamp', { ascending: false });
             if (!error && data) {
                 tasks = data;
                 renderTasks();
@@ -346,14 +359,14 @@
                 const fileName = `${Date.now()}.${fileExt}`;
                 const filePath = `${session.user.id}/${fileName}`;
                 
-                const { error: uploadError } = await supabase.storage.from('jewel-images').upload(filePath, file);
+                // ★ 修正：使用 sb
+                const { error: uploadError } = await sb.storage.from('jewel-images').upload(filePath, file);
                 
                 if (!uploadError) {
-                    const { data } = supabase.storage.from('jewel-images').getPublicUrl(filePath);
+                    const { data } = sb.storage.from('jewel-images').getPublicUrl(filePath);
                     img_url = data.publicUrl;
                 }
             } else if (editingTaskId) {
-                // Keep old image
                 const oldTask = tasks.find(t => t.id === editingTaskId);
                 img_url = oldTask.img_url;
             }
@@ -368,11 +381,11 @@
 
             if (editingTaskId) {
                 // Update
-                const { error } = await supabase.from('tasks').update(taskData).eq('id', editingTaskId);
+                const { error } = await sb.from('tasks').update(taskData).eq('id', editingTaskId);
                 if (!error) await loadTasks();
             } else {
                 // Insert
-                const { error } = await supabase.from('tasks').insert([taskData]);
+                const { error } = await sb.from('tasks').insert([taskData]);
                 if (!error) await loadTasks();
             }
             
@@ -381,7 +394,8 @@
         }
 
         async function updateStatus(id, newStatus) {
-            const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
+            // ★ 修正：使用 sb
+            const { error } = await sb.from('tasks').update({ status: newStatus }).eq('id', id);
             if (!error) {
                 const t = tasks.find(x => x.id === id);
                 if(t) t.status = newStatus;
@@ -391,7 +405,8 @@
 
         // --- 5. Database Logic (Settings) ---
         async function loadSettings() {
-            const { data, error } = await supabase.from('user_settings').select('*').single();
+            // ★ 修正：使用 sb
+            const { data, error } = await sb.from('user_settings').select('*').single();
             if (data && !error) {
                 if (data.config) {
                     platforms = data.config.platforms || [...DEFAULT_PLATFORMS];
@@ -416,7 +431,8 @@
 
         async function saveSettingsDB() {
             const config = { platforms, types };
-            const { error } = await supabase.from('user_settings').upsert({
+            // ★ 修正：使用 sb
+            const { error } = await sb.from('user_settings').upsert({
                 user_id: session.user.id,
                 config,
                 templates
@@ -427,7 +443,7 @@
         
         function renderTasks() {
             const container = document.getElementById('cardContainer');
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
             const showCompleted = document.getElementById('showCompleted').checked;
             const sortOrder = document.getElementById('sortOrder').value;
             const timeFilter = document.getElementById('timeFilter').value;
@@ -519,7 +535,9 @@
                 document.getElementById('modalSubmitBtn').innerText = "保存";
                 document.getElementById('inputIg').value = t.ig;
                 document.getElementById('inputNote').value = t.note;
-                document.getElementById('inputTime').value = new Date(t.timestamp - (new Date().getTimezoneOffset()*60000)).toISOString().slice(0,16);
+                // Fix timezone for datetime-local
+                const localDate = new Date(t.timestamp - (new Date().getTimezoneOffset()*60000));
+                document.getElementById('inputTime').value = localDate.toISOString().slice(0,16);
                 
                 selectedPlatformId = t.platform;
                 selectedTypeId = t.type;
@@ -530,7 +548,8 @@
                 document.getElementById('modalSubmitBtn').innerText = "建立";
                 document.getElementById('inputIg').value = '';
                 document.getElementById('inputNote').value = '';
-                document.getElementById('inputTime').value = new Date(Date.now() - (new Date().getTimezoneOffset()*60000)).toISOString().slice(0,16);
+                const now = new Date(Date.now() - (new Date().getTimezoneOffset()*60000));
+                document.getElementById('inputTime').value = now.toISOString().slice(0,16);
                 document.getElementById('previewImage').style.display='none';
                 selectedPlatformId = platforms[0].id;
                 selectedTypeId = types[0].id;
@@ -633,4 +652,5 @@
         initApp();
     </script>
 </body>
+
 </html>
