@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OrderTrack 訂單管家 v8.3</title>
+    <title>OrderTrack 訂單管家 v9.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -11,6 +11,7 @@
             --card-bg: #FFFFFF;
             --primary-color: #C09F80;
             --secondary-color: #EAD8C0;
+            --accent-color: #D4A373;
             --alert-color: #E57373; 
             --success-color: #81C784;
             --text-main: #5C4033;
@@ -35,11 +36,13 @@
         .msg-error { color: var(--alert-color); }
         .msg-success { color: var(--success-color); }
 
-        /* Loading & Lightbox */
+        /* Loading Spinner */
         .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; flex-direction: column; gap: 10px; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--secondary-color); border-top: 4px solid var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loading-text { font-size: 14px; font-weight: bold; color: var(--text-main); }
+
+        /* Lightbox */
         .lightbox-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); z-index: 11000; display: none; justify-content: center; align-items: center; cursor: zoom-out; animation: fadeIn 0.2s ease; }
         .lightbox-img { max-width: 95%; max-height: 95%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); object-fit: contain; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -48,7 +51,11 @@
         header { padding: 12px 16px; position: sticky; top: 0; background: rgba(255, 251, 245, 0.98); backdrop-filter: blur(5px); z-index: 90; border-bottom: 1px solid rgba(192, 159, 128, 0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         h1 { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-        .settings-btn, .logout-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; }
+        
+        .header-actions { display: flex; gap: 12px; }
+        .icon-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; transition: transform 0.2s; }
+        .icon-btn:active { transform: scale(0.9); }
+
         .controls-container { display: flex; flex-direction: column; gap: 8px; }
         .search-input { flex: 1; padding: 8px 14px; border-radius: 50px; border: 1px solid var(--secondary-color); background: #FFF; font-size: 14px; outline: none; height: 36px; width: 100%; }
         .filter-controls { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
@@ -76,12 +83,7 @@
         .card-img { width: 100%; height: 100%; object-fit: cover; }
         .card-no-img { font-size: 24px; color: #CCC; cursor: default; }
 
-        /* Type Tag - Dynamic Color */
-        .type-tag { 
-            font-size: 10px; padding: 3px 8px; border-radius: 6px; 
-            width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            font-weight: 600; color: #555;
-        }
+        .type-tag { font-size: 10px; padding: 3px 8px; border-radius: 6px; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #555; }
 
         .card-content { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .user-id-row { display: flex; align-items: center; gap: 6px; width: 100%; }
@@ -124,20 +126,33 @@
         .emoji-btn.selected { background: var(--secondary-color); border-color: var(--primary-color); transform: scale(1.1); }
         .preview-icon-display { font-size: 40px; background: #F8F4F0; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--secondary-color); margin: 0 auto 16px auto; }
         
-        /* Color Picker (v8.3 New) */
         .color-picker-container { display: none; margin-bottom: 16px; }
         .color-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
         .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; cursor: pointer; position: relative; }
         .color-btn.selected { border-color: var(--text-main); transform: scale(1.1); }
         .color-btn.selected::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #555; font-size: 14px; font-weight: bold; }
 
-        .settings-section { margin-bottom: 24px; }
-        .settings-title { font-size: 14px; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        /* Settings Redesign (v9.0) */
+        .settings-section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #F0F0F0; }
+        .settings-section:last-child { border-bottom: none; }
+        .settings-title { font-size: 16px; font-weight: bold; margin-bottom: 16px; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
         .template-item { margin-bottom: 12px; }
-        .template-desc { font-size: 12px; color: #999; margin-bottom: 4px; }
-        .template-input { width: 100%; padding: 8px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; font-size: 13px; }
-        .custom-item-row { display: flex; justify-content: space-between; padding: 8px 12px; background: #F8F4F0; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
-        .custom-item-btn { background: #E57373; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .template-desc { font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 500; }
+        .template-input { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; font-size: 14px; }
+        .custom-item-row { display: flex; justify-content: space-between; padding: 10px 14px; background: #F8F4F0; border-radius: 10px; margin-bottom: 8px; font-size: 14px; align-items: center; }
+        .custom-item-btn { background: #E57373; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        
+        .logout-btn-large {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #E57373; background: transparent;
+            color: #E57373; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px;
+        }
+
+        /* Stats Modal (v9.0) */
+        .stats-row { display: flex; gap: 10px; margin-bottom: 16px; }
+        .stats-result { display: flex; gap: 12px; margin-top: 20px; }
+        .stat-box { flex: 1; background: #F8F4F0; padding: 20px; border-radius: 16px; text-align: center; border: 2px solid #EFEBE5; }
+        .stat-value { display: block; font-size: 24px; font-weight: bold; color: var(--text-main); margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: #888; }
 
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; pointer-events: none; z-index: 3000; transition: opacity 0.3s; }
         .toast.show { opacity: 1; }
@@ -167,10 +182,10 @@
 
     <header>
         <div class="top-row">
-            <h1>📓 OrderTrack <span style="font-size:12px; font-weight:normal; color:#999; margin-left:4px;">v8.3</span></h1>
-            <div>
-                <button class="settings-btn" onclick="openSettings()">⚙️</button>
-                <button class="logout-btn" onclick="signOut()" title="登出">🚪</button>
+            <h1>📓 OrderTrack <span style="font-size:12px; font-weight:normal; color:#999; margin-left:4px;">v9.0</span></h1>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="openStats()" title="營收統計">📊</button>
+                <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
             </div>
         </div>
         
@@ -256,21 +271,60 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="statsModal">
+        <div class="modal">
+            <h3 style="text-align:center; margin-bottom:20px;">📊 營收統計</h3>
+            
+            <label class="form-label">日期範圍</label>
+            <div class="stats-row">
+                <input type="date" class="form-input" id="statsStart" onchange="calculateStats()">
+                <input type="date" class="form-input" id="statsEnd" onchange="calculateStats()">
+            </div>
+
+            <label class="form-label">任務類型</label>
+            <select class="form-input" id="statsTypeSelect" onchange="calculateStats()">
+                <option value="all">全部類型</option>
+                </select>
+
+            <div class="stats-result">
+                <div class="stat-box">
+                    <span class="stat-value" id="statIncome">$0</span>
+                    <span class="stat-label">總營收</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="statCount">0</span>
+                    <span class="stat-label">總單數</span>
+                </div>
+            </div>
+
+            <p style="font-size:12px; color:#999; text-align:center; margin-top:12px;">* 已排除「已取消」狀態的訂單</p>
+
+            <button class="auth-btn btn-login" style="margin-top:20px;" onclick="closeModal('statsModal')">關閉</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
-            <h3>⚙️ 設定</h3>
+            <h3 style="text-align:center; margin-bottom:20px;">⚙️ 設定</h3>
+            
             <div class="settings-section">
-                <div class="settings-title">文案模版</div>
+                <div class="settings-title">📝 文案模版</div>
                 <div id="templatesList"></div>
             </div>
+
             <div class="settings-section">
-                <div class="settings-title">自定義平台</div>
-                <div id="customPlatformsList"></div>
-            </div>
-            <div class="settings-section">
-                <div class="settings-title">自定義類型</div>
+                <div class="settings-title">🛠️ 自定義選項管理</div>
+                <label class="form-label" style="font-size:12px; margin-bottom:4px;">來源平台</label>
+                <div id="customPlatformsList" style="margin-bottom:12px;"></div>
+                <label class="form-label" style="font-size:12px; margin-bottom:4px;">任務類型</label>
                 <div id="customTypesList"></div>
             </div>
+
+            <div class="settings-section" style="border:none;">
+                <div class="settings-title">👤 帳號管理</div>
+                <button class="logout-btn-large" onclick="signOut()">登出帳號</button>
+            </div>
+
             <button class="auth-btn btn-login" onclick="closeModal('settingsModal')">完成</button>
         </div>
     </div>
@@ -289,13 +343,11 @@
             { id: 'fb', label: 'FB', icon: '📘', isDefault: true },
             { id: 'line', label: 'Line', icon: '💬', isDefault: true }
         ];
-        // v8.3 Added Default Colors
         const DEFAULT_TYPES = [
-            { id: 'order', label: '訂製', icon: '🛒', isDefault: true, color: '#E3F2FD' }, // Light Blue
-            { id: 'repair', label: '維修', icon: '🔧', isDefault: true, color: '#FFF3E0' }, // Light Orange
-            { id: 'market', label: '市集', icon: '👋', isDefault: true, color: '#E8F5E9' }  // Light Green
+            { id: 'order', label: '訂製', icon: '🛒', isDefault: true, color: '#E3F2FD' },
+            { id: 'repair', label: '維修', icon: '🔧', isDefault: true, color: '#FFF3E0' },
+            { id: 'market', label: '市集', icon: '👋', isDefault: true, color: '#E8F5E9' }
         ];
-        // Theme Safe Pastel Colors
         const TAG_COLORS = [
             '#E3F2FD', '#FFF3E0', '#E8F5E9', '#F3E5F5', 
             '#FFEBEE', '#E0F7FA', '#F9FBE7', '#ECEFF1'
@@ -318,7 +370,7 @@
         let editingTaskId = null;
         let creatingItemContext = ''; 
         let selectedEmoji = '🌐';
-        let selectedColor = TAG_COLORS[0]; // v8.3 State
+        let selectedColor = TAG_COLORS[0];
 
         // 2. Auth
         async function initApp() {
@@ -497,7 +549,13 @@
             if (data && !error) {
                 if (data.config) {
                     platforms = data.config.platforms || [...DEFAULT_PLATFORMS];
-                    types = data.config.types || [...DEFAULT_TYPES];
+                    let loadedTypes = data.config.types || [...DEFAULT_TYPES];
+                    types = loadedTypes.map(t => {
+                        if(t.id === 'order' && !t.color) return { ...t, color: '#E3F2FD' };
+                        if(t.id === 'repair' && !t.color) return { ...t, color: '#FFF3E0' };
+                        if(t.id === 'market' && !t.color) return { ...t, color: '#E8F5E9' };
+                        return t;
+                    });
                 }
                 if (data.templates) { templates = data.templates; }
             } else if (!data) {
@@ -518,7 +576,61 @@
             await sb.from('user_settings').upsert({ user_id: session.user.id, config, templates });
         }
 
-        // 5. Render Logic
+        // 5. Stats Logic (v9.0 New)
+        function openStats() {
+            // Set default date range to "This Month"
+            const date = new Date();
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+            
+            // Adjust for local timezone to YYYY-MM-DD
+            const toDateStr = (d) => {
+                const offset = d.getTimezoneOffset() * 60000;
+                return new Date(d - offset).toISOString().split('T')[0];
+            };
+
+            document.getElementById('statsStart').value = toDateStr(firstDay);
+            document.getElementById('statsEnd').value = toDateStr(lastDay);
+
+            // Populate Types Select
+            const sel = document.getElementById('statsTypeSelect');
+            sel.innerHTML = '<option value="all">全部類型</option>';
+            types.forEach(t => {
+                sel.innerHTML += `<option value="${t.id}">${t.label}</option>`;
+            });
+
+            calculateStats();
+            document.getElementById('statsModal').style.display = 'flex';
+        }
+
+        function calculateStats() {
+            const startStr = document.getElementById('statsStart').value;
+            const endStr = document.getElementById('statsEnd').value;
+            const typeId = document.getElementById('statsTypeSelect').value;
+
+            if(!startStr || !endStr) return;
+
+            const startTs = new Date(startStr).getTime();
+            const endTs = new Date(endStr).getTime() + (24 * 60 * 60 * 1000) - 1; // End of that day
+
+            let totalIncome = 0;
+            let count = 0;
+
+            tasks.forEach(t => {
+                // Filter Logic
+                if (t.status === 'cancel') return; // Exclude cancelled
+                if (t.timestamp < startTs || t.timestamp > endTs) return; // Date range
+                if (typeId !== 'all' && t.type !== typeId) return; // Type filter
+
+                totalIncome += parseInt(t.price || 0);
+                count++;
+            });
+
+            document.getElementById('statIncome').innerText = '$' + totalIncome.toLocaleString();
+            document.getElementById('statCount').innerText = count;
+        }
+
+        // 6. Render Logic
         function renderTasks() {
             const container = document.getElementById('cardContainer');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
@@ -577,11 +689,13 @@
                 const div = document.createElement('div');
                 div.className = `card ${isOverdue?'overdue':''} ${t.status==='cancel'?'cancel':''}`;
                 
+                const tagColor = typeObj.color || '#EEE';
+
                 div.innerHTML = `
                     ${isOverdue ? '<div class="overdue-badge">⚠️ 逾期</div>' : ''}
                     
                     <div class="card-left-col">
-                        <span class="type-tag" style="background-color: ${typeObj.color || '#EEE'}">${typeObj.label}</span>
+                        <span class="type-tag" style="background-color: ${tagColor}">${typeObj.label}</span>
                         <div class="card-img-box">${imgHtml}</div>
                     </div>
 
@@ -669,19 +783,17 @@
         function setPlatform(id) { selectedPlatformId=id; renderSelectors('platformSelectorContainer', platforms, id, 'setPlatform', 'platform'); }
         function setType(id) { selectedTypeId=id; renderSelectors('typeSelectorContainer', types, id, 'setType', 'type'); }
         
-        // Custom Item Logic (Updated v8.3)
         function openCustomItemModal(ctx) { 
             creatingItemContext = ctx; 
             document.getElementById('customName').value=''; 
             updateEmojiPreview('🌐'); 
             renderEmojiGrid(); 
             
-            // v8.3 Show/Hide Color Picker
             const colorSection = document.getElementById('colorPickerSection');
             if (ctx === 'type') {
                 colorSection.style.display = 'block';
                 renderColorGrid();
-                selectColor(TAG_COLORS[0]); // Reset to first color
+                selectColor(TAG_COLORS[0]); 
             } else {
                 colorSection.style.display = 'none';
             }
@@ -691,7 +803,6 @@
         function renderEmojiGrid() { let h=''; COMMON_EMOJIS.forEach(e=>h+=`<div class="emoji-btn" onclick="updateEmojiPreview('${e}')">${e}</div>`); document.getElementById('emojiGrid').innerHTML=h; }
         function updateEmojiPreview(e) { selectedEmoji=e; document.getElementById('emojiPreviewDisplay').innerText=e; }
         
-        // v8.3 Color Picker Logic
         function renderColorGrid() {
             let h = '';
             TAG_COLORS.forEach(c => {
@@ -708,7 +819,6 @@
         async function saveCustomItem() {
             const label=document.getElementById('customName').value; if(!label) return;
             const newId='custom_'+Date.now(); 
-            // v8.3 Save Color if it's a type
             const item={id:newId, label, icon:selectedEmoji, isDefault:false};
             if(creatingItemContext === 'type') item.color = selectedColor;
 
