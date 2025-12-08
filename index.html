@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OrderTrack 訂單管家 v9.0</title>
+    <title>OrderTrack 訂單管家 v9.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -51,7 +51,6 @@
         header { padding: 12px 16px; position: sticky; top: 0; background: rgba(255, 251, 245, 0.98); backdrop-filter: blur(5px); z-index: 90; border-bottom: 1px solid rgba(192, 159, 128, 0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         h1 { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-        
         .header-actions { display: flex; gap: 12px; }
         .icon-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; transition: transform 0.2s; }
         .icon-btn:active { transform: scale(0.9); }
@@ -77,25 +76,21 @@
         .overdue-badge { position: absolute; top: -8px; right: -4px; background: var(--alert-color); color: white; font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: bold; animation: pulse 2s infinite; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
         .card-left-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; margin-right: 2px; }
-        
         .card-img-box { width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #F5F5F5; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
         @media (max-width: 480px) { .card-img-box { width: 64px; height: 64px; } }
         .card-img { width: 100%; height: 100%; object-fit: cover; }
         .card-no-img { font-size: 24px; color: #CCC; cursor: default; }
-
         .type-tag { font-size: 10px; padding: 3px 8px; border-radius: 6px; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #555; }
 
         .card-content { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .user-id-row { display: flex; align-items: center; gap: 6px; width: 100%; }
         .platform-icon { font-size: 16px; flex-shrink: 0; }
         .ig-link { font-weight: 700; font-size: 16px; color: var(--text-main); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-        
         .meta-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 2px; }
         .price-text { font-weight: bold; color: var(--primary-color); font-size: 14px; font-family: monospace, sans-serif; display: flex; align-items: center; gap: 2px; }
         .time-display { font-size: 11px; color: #999; font-family: monospace; cursor: pointer; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
         .time-display:active { background-color: #F0EAE4; }
         .note { font-size: 13px; color: var(--text-light); line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 18px; }
-        
         .action-row { display: flex; gap: 8px; align-items: center; margin-top: auto; }
         .status-select { flex: 1; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--secondary-color); background: var(--bg-color); font-size: 13px; font-weight: 600; height: 34px; margin-right: 8px; }
         .btn-action { padding: 0 12px; border-radius: 8px; background: var(--secondary-color); color: var(--text-main); border: none; font-size: 12px; font-weight: 600; height: 34px; display: flex; align-items: center; cursor: pointer; margin-left: 4px; }
@@ -108,7 +103,6 @@
         @media (min-width: 600px) { .modal-overlay { align-items: center; } .modal { border-radius: 24px !important; max-width: 420px; } }
         .modal { background: #FFF; width: 100%; padding: 24px; border-radius: 24px 24px 0 0; animation: slideUp 0.3s ease; overflow-y: auto; max-height: 90vh; }
         @keyframes slideUp { from {transform:translateY(100%);} to {transform:translateY(0);} }
-        
         .form-label { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-main); }
         .form-input, .form-textarea { width: 100%; padding: 12px; background: #F8F4F0; border: 1px solid transparent; border-radius: 12px; margin-bottom: 16px; font-size: 16px; }
         .selector-scroll-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
@@ -125,29 +119,29 @@
         .emoji-btn { background: #FFF; border: 1px solid #EEE; border-radius: 8px; font-size: 20px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .emoji-btn.selected { background: var(--secondary-color); border-color: var(--primary-color); transform: scale(1.1); }
         .preview-icon-display { font-size: 40px; background: #F8F4F0; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--secondary-color); margin: 0 auto 16px auto; }
-        
         .color-picker-container { display: none; margin-bottom: 16px; }
         .color-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
         .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; cursor: pointer; position: relative; }
         .color-btn.selected { border-color: var(--text-main); transform: scale(1.1); }
         .color-btn.selected::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #555; font-size: 14px; font-weight: bold; }
 
-        /* Settings Redesign (v9.0) */
-        .settings-section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #F0F0F0; }
+        /* Settings Redesign - Collapsible (v9.1) */
+        .settings-section { margin-bottom: 12px; border-bottom: 1px solid #F0F0F0; }
         .settings-section:last-child { border-bottom: none; }
-        .settings-title { font-size: 16px; font-weight: bold; margin-bottom: 16px; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .settings-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; cursor: pointer; user-select: none; }
+        .settings-title { font-size: 16px; font-weight: bold; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin: 0; }
+        .chevron { font-size: 12px; color: var(--text-light); transition: transform 0.3s ease; }
+        .chevron.rotate { transform: rotate(180deg); }
+        .settings-body { display: none; padding-bottom: 16px; padding-top: 4px; }
+        
         .template-item { margin-bottom: 12px; }
         .template-desc { font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 500; }
         .template-input { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; font-size: 14px; }
         .custom-item-row { display: flex; justify-content: space-between; padding: 10px 14px; background: #F8F4F0; border-radius: 10px; margin-bottom: 8px; font-size: 14px; align-items: center; }
         .custom-item-btn { background: #E57373; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        
-        .logout-btn-large {
-            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #E57373; background: transparent;
-            color: #E57373; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px;
-        }
+        .logout-btn-large { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #E57373; background: transparent; color: #E57373; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 16px; }
 
-        /* Stats Modal (v9.0) */
+        /* Stats Modal */
         .stats-row { display: flex; gap: 10px; margin-bottom: 16px; }
         .stats-result { display: flex; gap: 12px; margin-top: 20px; }
         .stat-box { flex: 1; background: #F8F4F0; padding: 20px; border-radius: 16px; text-align: center; border: 2px solid #EFEBE5; }
@@ -182,7 +176,7 @@
 
     <header>
         <div class="top-row">
-            <h1>📓 OrderTrack <span style="font-size:12px; font-weight:normal; color:#999; margin-left:4px;">v9.0</span></h1>
+            <h1>📓 OrderTrack <span style="font-size:12px; font-weight:normal; color:#999; margin-left:4px;">v9.1</span></h1>
             <div class="header-actions">
                 <button class="icon-btn" onclick="openStats()" title="營收統計">📊</button>
                 <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
@@ -284,7 +278,7 @@
             <label class="form-label">任務類型</label>
             <select class="form-input" id="statsTypeSelect" onchange="calculateStats()">
                 <option value="all">全部類型</option>
-                </select>
+            </select>
 
             <div class="stats-result">
                 <div class="stat-box">
@@ -308,16 +302,26 @@
             <h3 style="text-align:center; margin-bottom:20px;">⚙️ 設定</h3>
             
             <div class="settings-section">
-                <div class="settings-title">📝 文案模版</div>
-                <div id="templatesList"></div>
+                <div class="settings-header" onclick="toggleSection('secTemplates', this)">
+                    <span class="settings-title">📝 文案模版</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div id="secTemplates" class="settings-body">
+                    <div id="templatesList"></div>
+                </div>
             </div>
 
             <div class="settings-section">
-                <div class="settings-title">🛠️ 自定義選項管理</div>
-                <label class="form-label" style="font-size:12px; margin-bottom:4px;">來源平台</label>
-                <div id="customPlatformsList" style="margin-bottom:12px;"></div>
-                <label class="form-label" style="font-size:12px; margin-bottom:4px;">任務類型</label>
-                <div id="customTypesList"></div>
+                <div class="settings-header" onclick="toggleSection('secCustom', this)">
+                    <span class="settings-title">🛠️ 自定義選項管理</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div id="secCustom" class="settings-body">
+                    <label class="form-label" style="font-size:12px; margin-bottom:4px;">來源平台</label>
+                    <div id="customPlatformsList" style="margin-bottom:12px;"></div>
+                    <label class="form-label" style="font-size:12px; margin-bottom:4px;">任務類型</label>
+                    <div id="customTypesList"></div>
+                </div>
             </div>
 
             <div class="settings-section" style="border:none;">
@@ -576,14 +580,12 @@
             await sb.from('user_settings').upsert({ user_id: session.user.id, config, templates });
         }
 
-        // 5. Stats Logic (v9.0 New)
+        // 5. Stats Logic
         function openStats() {
-            // Set default date range to "This Month"
             const date = new Date();
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
             const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
             
-            // Adjust for local timezone to YYYY-MM-DD
             const toDateStr = (d) => {
                 const offset = d.getTimezoneOffset() * 60000;
                 return new Date(d - offset).toISOString().split('T')[0];
@@ -592,7 +594,6 @@
             document.getElementById('statsStart').value = toDateStr(firstDay);
             document.getElementById('statsEnd').value = toDateStr(lastDay);
 
-            // Populate Types Select
             const sel = document.getElementById('statsTypeSelect');
             sel.innerHTML = '<option value="all">全部類型</option>';
             types.forEach(t => {
@@ -611,16 +612,15 @@
             if(!startStr || !endStr) return;
 
             const startTs = new Date(startStr).getTime();
-            const endTs = new Date(endStr).getTime() + (24 * 60 * 60 * 1000) - 1; // End of that day
+            const endTs = new Date(endStr).getTime() + (24 * 60 * 60 * 1000) - 1;
 
             let totalIncome = 0;
             let count = 0;
 
             tasks.forEach(t => {
-                // Filter Logic
-                if (t.status === 'cancel') return; // Exclude cancelled
-                if (t.timestamp < startTs || t.timestamp > endTs) return; // Date range
-                if (typeId !== 'all' && t.type !== typeId) return; // Type filter
+                if (t.status === 'cancel') return;
+                if (t.timestamp < startTs || t.timestamp > endTs) return;
+                if (typeId !== 'all' && t.type !== typeId) return;
 
                 totalIncome += parseInt(t.price || 0);
                 count++;
@@ -827,6 +827,20 @@
             else { types.push(item); await saveSettingsDB(); setType(newId); renderTopFilters(); }
             showLoading(false); closeModal('customItemModal');
         }
+        
+        // v9.1 Toggle Logic
+        function toggleSection(id, header) {
+            const body = document.getElementById(id);
+            const chevron = header.querySelector('.chevron');
+            if (body.style.display === 'none' || body.style.display === '') {
+                body.style.display = 'block';
+                chevron.classList.add('rotate');
+            } else {
+                body.style.display = 'none';
+                chevron.classList.remove('rotate');
+            }
+        }
+
         function openSettings() {
             const list=document.getElementById('templatesList'); list.innerHTML='';
             ['waiting_pay','to_ship','making','repairing','done','cancel'].forEach(k => {
