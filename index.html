@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OrderTrack 訂單管家 v9.2</title>
+    <title>OrderTrack 企業版 v10.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FFFBF5">
     <link rel="apple-touch-icon" href="icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
+    
     <link rel="stylesheet" href="style.css">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -23,32 +20,66 @@
 
     <div id="auth-overlay">
         <div class="auth-box">
-            <div class="auth-title">📓 OrderTrack</div>
-            <input type="email" id="email" class="form-input" placeholder="電子信箱">
-            <input type="password" id="password" class="form-input" placeholder="密碼 (至少6位)">
-            <button class="auth-btn btn-login" onclick="signIn()" id="btnLogin">登入</button>
-            <button class="auth-btn btn-signup" onclick="signUp()" id="btnSignup">註冊新帳號</button>
+            <div class="auth-header">
+                <div class="auth-logo">📓</div>
+                <div class="auth-title">OrderTrack</div>
+                <div class="auth-subtitle">手作職人的雲端管家</div>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')" id="tab-login">登入</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')" id="tab-register">品牌註冊</button>
+            </div>
+
+            <div id="view-login">
+                <div class="role-switch">
+                    <label><input type="radio" name="loginRole" value="owner" checked onchange="toggleLoginMode()"> 負責人</label>
+                    <label><input type="radio" name="loginRole" value="staff" onchange="toggleLoginMode()"> 團隊夥伴</label>
+                </div>
+
+                <div id="login-owner-fields">
+                    <input type="email" id="loginEmail" class="form-input" placeholder="負責人 Email">
+                </div>
+
+                <div id="login-staff-fields" style="display:none;">
+                    <input type="text" id="loginTeamCode" class="form-input" placeholder="團隊代號 (例如: MYSHOP)">
+                    <input type="text" id="loginUsername" class="form-input" placeholder="員工帳號">
+                </div>
+
+                <input type="password" id="loginPassword" class="form-input" placeholder="密碼">
+                <button class="auth-btn btn-login" onclick="handleLogin()">進入系統</button>
+            </div>
+
+            <div id="view-register" style="display:none;">
+                <input type="text" id="regBrandName" class="form-input" placeholder="品牌名稱 (顯示用)">
+                <input type="text" id="regTeamCode" class="form-input" placeholder="設定團隊代號 (英文數字，唯一)">
+                <input type="text" id="regInviteCode" class="form-input highlight-input" placeholder="輸入邀請碼 (必填)">
+                <div class="divider"></div>
+                <input type="email" id="regEmail" class="form-input" placeholder="負責人 Email">
+                <input type="password" id="regPassword" class="form-input" placeholder="設定密碼 (至少6位)">
+                <button class="auth-btn btn-signup" onclick="handleRegister()">創建品牌</button>
+            </div>
+
             <div id="auth-msg" class="auth-message"></div>
         </div>
     </div>
 
     <div class="loading-overlay" id="loading">
         <div class="spinner"></div>
-        <div class="loading-text">處理中...</div>
+        <div class="loading-text">資料同步中...</div>
     </div>
 
     <header>
         <div class="top-row">
-            <h1>📓 OrderTrack <span style="font-size:12px; font-weight:normal; color:#999; margin-left:4px;">v9.2</span></h1>
+            <h1 id="appHeaderTitle">📓 OrderTrack</h1>
             <div class="header-actions">
-                <button class="icon-btn" onclick="openStats()" title="營收統計">📊</button>
+                <button class="icon-btn" onclick="openStats()" title="統計">📊</button>
                 <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
             </div>
         </div>
-        
         <div class="controls-container">
             <div class="search-row">
-                <input type="text" class="search-input" id="searchInput" placeholder="搜尋 ID 或備註..." oninput="renderTasks()">
+                <input type="text" class="search-input" id="searchInput" placeholder="搜尋 ID、備註..." oninput="renderTasks()">
             </div>
             <div class="filter-controls">
                 <select class="control-select" id="timeFilter" onchange="renderTasks()">
@@ -78,24 +109,34 @@
     <div class="modal-overlay" id="taskModal">
         <div class="modal">
             <h3 id="modalTitle" style="text-align:center; margin-bottom:16px;">新增任務</h3>
-            <label class="form-label">建立時間</label>
-            <input type="datetime-local" class="form-input" id="inputTime">
             
-            <label class="form-label">來源 (右滑新增)</label>
+            <label class="form-label">指派給 (v10.0)</label>
+            <div class="selector-scroll-container" id="assigneeSelector">
+                </div>
+
+            <label class="form-label">來源</label>
             <div class="selector-scroll-container" id="platformSelectorContainer"></div>
             
-            <label class="form-label">類型 (右滑新增)</label>
+            <label class="form-label">類型</label>
             <div class="selector-scroll-container" id="typeSelectorContainer"></div>
             
-            <label class="form-label">ID / 姓名</label>
-            <input type="text" class="form-input" id="inputIg" placeholder="例如: jewelry_123">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:2;">
+                    <label class="form-label">ID / 姓名</label>
+                    <input type="text" class="form-input" id="inputIg">
+                </div>
+                <div style="flex:1;">
+                    <label class="form-label">金額</label>
+                    <input type="number" class="form-input" id="inputPrice" placeholder="0">
+                </div>
+            </div>
 
-            <label class="form-label">金額</label>
-            <input type="number" class="form-input" id="inputPrice" placeholder="0">
+            <label class="form-label">時間</label>
+            <input type="datetime-local" class="form-input" id="inputTime">
             
-            <label class="form-label">照片 (自動壓縮)</label>
+            <label class="form-label">照片</label>
             <div class="image-upload-box" onclick="document.getElementById('fileInput').click()">
-                📷 點擊上傳 / 換照片
+                📷 點擊上傳
                 <img id="previewImage">
             </div>
             <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="previewFile()">
@@ -112,45 +153,58 @@
     <div class="modal-overlay" id="customItemModal">
         <div class="modal">
             <h3 style="text-align:center;">新增自定義</h3>
-            <label class="form-label">名稱</label>
-            <input type="text" class="form-input" id="customName">
-            
+            <input type="text" class="form-input" id="customName" placeholder="名稱">
             <div class="preview-icon-display" id="emojiPreviewDisplay">🌐</div>
             <div class="emoji-grid-container" id="emojiGrid"></div>
-            
             <div id="colorPickerSection" class="color-picker-container">
-                <label class="form-label">選擇標籤背景色</label>
                 <div class="color-grid" id="colorGrid"></div>
             </div>
-
             <button class="auth-btn btn-login" onclick="saveCustomItem()">確認新增</button>
             <button class="auth-btn btn-signup" onclick="closeModal('customItemModal')">取消</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="staffModal">
+        <div class="modal">
+            <h3 style="text-align:center;">新增團隊夥伴</h3>
+            <p style="font-size:12px; color:#666; text-align:center; margin-bottom:15px;">夥伴使用團隊代號登入，無需 Email</p>
+            
+            <label class="form-label">員工帳號 (例如: amy)</label>
+            <input type="text" class="form-input" id="staffUsername">
+            
+            <label class="form-label">登入密碼</label>
+            <input type="text" class="form-input" id="staffPassword" placeholder="設定一組密碼">
+            
+            <label class="form-label">權限設定</label>
+            <div style="background:#F8F4F0; padding:10px; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <input type="checkbox" id="permStats"> 查看營收報表
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <input type="checkbox" id="permTags" checked> 新增/刪除標籤
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="permDelete"> 刪除任務
+                </label>
+            </div>
+
+            <button class="auth-btn btn-login" onclick="saveStaff()">建立帳號</button>
+            <button class="auth-btn btn-signup" onclick="closeModal('staffModal')">取消</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="statsModal">
         <div class="modal">
             <h3 style="text-align:center; margin-bottom:20px;">📊 營收統計</h3>
-            <label class="form-label">日期範圍</label>
             <div class="stats-row">
                 <input type="date" class="form-input" id="statsStart" onchange="calculateStats()">
                 <input type="date" class="form-input" id="statsEnd" onchange="calculateStats()">
             </div>
-            <label class="form-label">任務類型</label>
-            <select class="form-input" id="statsTypeSelect" onchange="calculateStats()">
-                <option value="all">全部類型</option>
-            </select>
+            <select class="form-input" id="statsTypeSelect" onchange="calculateStats()"></select>
             <div class="stats-result">
-                <div class="stat-box">
-                    <span class="stat-value" id="statIncome">$0</span>
-                    <span class="stat-label">總營收</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-value" id="statCount">0</span>
-                    <span class="stat-label">總單數</span>
-                </div>
+                <div class="stat-box"><span class="stat-value" id="statIncome">$0</span><span class="stat-label">總營收</span></div>
+                <div class="stat-box"><span class="stat-value" id="statCount">0</span><span class="stat-label">總單數</span></div>
             </div>
-            <p style="font-size:12px; color:#999; text-align:center; margin-top:12px;">* 已排除「已取消」狀態的訂單</p>
             <button class="auth-btn btn-login" style="margin-top:20px;" onclick="closeModal('statsModal')">關閉</button>
         </div>
     </div>
@@ -159,31 +213,46 @@
         <div class="modal">
             <h3 style="text-align:center; margin-bottom:20px;">⚙️ 設定</h3>
             
-            <div class="settings-section">
-                <div class="settings-header" onclick="toggleSection('secTemplates', this)">
-                    <span class="settings-title">📝 文案模版</span>
-                    <span class="chevron">▼</span>
+            <div id="ownerSettings" style="display:none;">
+                <div class="settings-section">
+                    <div class="settings-header" onclick="toggleSection('secTeam', this)">
+                        <span class="settings-title">👥 團隊管理 <span id="staffCountBadge" style="font-size:12px; background:#eee; padding:2px 6px; border-radius:10px;">0/2</span></span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div id="secTeam" class="settings-body">
+                        <div id="staffList"></div>
+                        <button class="custom-item-btn" style="width:100%; margin-top:8px; background:var(--text-main);" onclick="openStaffModal()">+ 新增使用者</button>
+                    </div>
                 </div>
-                <div id="secTemplates" class="settings-body">
-                    <div id="templatesList"></div>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <div class="settings-header" onclick="toggleSection('secCustom', this)">
-                    <span class="settings-title">🛠️ 自定義選項管理</span>
-                    <span class="chevron">▼</span>
+                <div class="settings-section">
+                    <div class="settings-header" onclick="toggleSection('secTemplates', this)">
+                        <span class="settings-title">📝 文案模版</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div id="secTemplates" class="settings-body"><div id="templatesList"></div></div>
                 </div>
-                <div id="secCustom" class="settings-body">
-                    <label class="form-label" style="font-size:12px; margin-bottom:4px;">來源平台</label>
-                    <div id="customPlatformsList" style="margin-bottom:12px;"></div>
-                    <label class="form-label" style="font-size:12px; margin-bottom:4px;">任務類型</label>
-                    <div id="customTypesList"></div>
+
+                <div class="settings-section">
+                    <div class="settings-header" onclick="toggleSection('secCustom', this)">
+                        <span class="settings-title">🛠️ 自定義選項</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div id="secCustom" class="settings-body">
+                        <label class="form-label" style="font-size:12px;">來源平台</label>
+                        <div id="customPlatformsList"></div>
+                        <label class="form-label" style="font-size:12px; margin-top:8px;">任務類型</label>
+                        <div id="customTypesList"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="settings-section" style="border:none;">
-                <div class="settings-title">👤 帳號管理</div>
+                <div class="settings-title">👤 帳號</div>
+                <div class="settings-info-row">
+                    <span>身份</span>
+                    <span id="settingRole" style="font-weight:bold;"></span>
+                </div>
                 <button class="logout-btn-large" onclick="signOut()">登出帳號</button>
             </div>
 
